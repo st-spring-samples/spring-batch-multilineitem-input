@@ -3,15 +3,12 @@ package com.sudhirt.practice.batch.multiline.reader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import com.sudhirt.practice.batch.multiline.dto.Person;
+import com.sudhirt.practice.batch.multiline.exception.InputFileParseException;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.AfterStep;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.item.ExecutionContext;
-import org.springframework.batch.item.ItemStreamException;
 import org.springframework.batch.item.ItemStreamReader;
-import org.springframework.batch.item.NonTransientResourceException;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.mapping.PassThroughFieldSetMapper;
@@ -56,23 +53,23 @@ public class MultiLineItemReader implements ItemStreamReader<Person> {
 	}
 
 	@Override
-	public void open(ExecutionContext executionContext) throws ItemStreamException {
+	public void open(ExecutionContext executionContext) {
 		delegate.open(executionContext);
 	}
 
 	@Override
-	public void update(ExecutionContext executionContext) throws ItemStreamException {
+	public void update(ExecutionContext executionContext) {
 		delegate.update(executionContext);
 
 	}
 
 	@Override
-	public void close() throws ItemStreamException {
+	public void close() {
 		delegate.close();
 	}
 
 	@Override
-	public Person read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+	public Person read() throws Exception {
 		Person person = null;
 		FieldSet line;
 		while ((line = delegate.read()) != null) {
@@ -81,22 +78,10 @@ public class MultiLineItemReader implements ItemStreamReader<Person> {
 				person = new Person();
 			}
 			else if (!ITEM_FOOTER.equals(firstWord)) {
-				switch (firstWord) {
-				case "FIRST_NAME":
-					person.setFirstName(line.readString(1));
-					break;
-				case "LAST_NAME":
-					person.setFirstName(line.readString(1));
-					break;
-				case "DATE_OF_BIRTH":
-					person.setDateOfBirth(LocalDate.parse(line.readString(1), BIRTH_DATE_FORMATTER));
-					break;
-				case "GENDER":
-					person.setGender(line.readString(1));
-					break;
-				default:
-					throw new RuntimeException("Unexpected element encountered while reading input file");
+				if (person == null) {
+					throw new InputFileParseException("Expected item header missing in input file");
 				}
+				map(firstWord, line.readString(1), person);
 			}
 
 			FieldSet nextLine = delegate.peek();
@@ -105,6 +90,27 @@ public class MultiLineItemReader implements ItemStreamReader<Person> {
 			}
 		}
 		return person;
+	}
+
+	private Person map(String identifier, String value, Person person) {
+		Person newPerson;
+		switch (identifier) {
+		case "FIRST_NAME":
+			newPerson = person.withFirstName(value);
+			break;
+		case "LAST_NAME":
+			newPerson = person.withLastName(value);
+			break;
+		case "DATE_OF_BIRTH":
+			newPerson = person.withDateOfBirth(LocalDate.parse(value, BIRTH_DATE_FORMATTER));
+			break;
+		case "GENDER":
+			newPerson = person.withGender(value);
+			break;
+		default:
+			throw new InputFileParseException("Unexpected element encountered while reading input file");
+		}
+		return newPerson;
 	}
 
 }
