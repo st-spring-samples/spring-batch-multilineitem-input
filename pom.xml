@@ -11,7 +11,6 @@
 	<groupId>com.sudhirt.practice.batch</groupId>
 	<artifactId>spring-batch-multilineitem-input</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>demo</name>
 	<description>Sample application to demonstrate spring batch item reader for complex file</description>
 
 	<properties>
