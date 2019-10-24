@@ -23,8 +23,20 @@ class ApplicationTests {
 	}
 
 	@Test
-	public void should_fail_while_processing_invalid_input_csv() throws Exception {
-		var jobExecution = jobLauncherTestUtils.launchJob(buildJobParameters("invalid_input.csv"));
+	public void should_fail_while_processing_input_with_invalid_fieldname() throws Exception {
+		var jobExecution = jobLauncherTestUtils.launchJob(buildJobParameters("input_invalid_field_name.csv"));
+		assertThat(jobExecution.getExitStatus().getExitCode()).isEqualTo("FAILED");
+	}
+
+	@Test
+	public void should_fail_while_processing_input_with_missing_item_header() throws Exception {
+		var jobExecution = jobLauncherTestUtils.launchJob(buildJobParameters("input_missing_item_header.csv"));
+		assertThat(jobExecution.getExitStatus().getExitCode()).isEqualTo("FAILED");
+	}
+
+	@Test
+	public void should_fail_while_processing_input_with_missing_first_item_header() throws Exception {
+		var jobExecution = jobLauncherTestUtils.launchJob(buildJobParameters("input_missing_first_item_header.csv"));
 		assertThat(jobExecution.getExitStatus().getExitCode()).isEqualTo("FAILED");
 	}
 
